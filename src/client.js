@@ -19,7 +19,7 @@ class ApiError extends Error {
 
 const _endpoints = {
     login: {
-        url: (guid) => `https://auth.itunes.apple.com/auth/v1/native/fast?guid=${guid}`,
+        url: (guid) => `https://auth.itunes.apple.com/auth/v1/native/fast/?guid=${guid}`,
         buildBody: ({email, password, mfa}) => ({
             appleId: email,
             attempt: 1,
