@@ -56,15 +56,20 @@ export class SignatureClient {
             const archive = archiver('zip', {zlib: {level: 1}});
             archive.pipe(output);
             const entries = await readZip.entries();
-            const mainAppSuppRegex = /^Payload\/[^\/]+\.app\/SC_Info\/[^\/]+\.supp$/i;
-            const candidates = Object.values(entries).filter(entry => mainAppSuppRegex.test(entry.name));
+            const entryList = Object.values(entries);
+            const regexSupx = /^Payload\/[^\/]+\.app\/SC_Info\/[^\/]+\.supx$/i;
+            const regexSupp = /^Payload\/[^\/]+\.app\/SC_Info\/[^\/]+\.supp$/i;
+            let candidates = entryList.filter(entry => regexSupx.test(entry.name));
             if (candidates.length === 0) {
-                const e = new Error('软件签名：[X] 无效的 App 包: 未找到主程序的 SC_Info/*.supp 签名占位文件');
+                candidates = entryList.filter(entry => regexSupp.test(entry.name));
+            }
+            if (candidates.length === 0) {
+                const e = new Error('软件签名：[X] 无效的 App 包: 未找到主程序的 SC_Info/*.supx/supp 签名占位文件');
                 e.prefix = '软件签名：';
                 throw e;
             }
             const suppFileEntry = candidates.sort((a, b) => a.name.length - b.name.length)[0];
-            const signatureTargetPath = suppFileEntry.name.replace(/\.supp$/i, '.sinf');
+            const signatureTargetPath = suppFileEntry.name.replace(/\.(supx|supp)$/i, '.sinf');
             archive.append(Buffer.from(plist.build(this.metadata), 'utf8'), {name: 'iTunesMetadata.plist'});
             archive.append(Buffer.from(this.signature, 'base64'), {name: signatureTargetPath});
             for (const entry of Object.values(entries)) {
